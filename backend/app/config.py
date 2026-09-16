@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     ollama_model: str = "llama3.2:3b"
         
     # Gemini API
-    gemini_api_key: str = "AIzaSyBGTc2TR7VYB72oClrb2dzy6PY7nf7txRo"
+    gemini_api_key: str = ""
     gemini_model: str = "models/gemini-2.0-flash"
     
     # Embedding Model
