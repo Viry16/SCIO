@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: scio-backend
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    plan: free
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: models/gemini-2.0-flash
+      - key: CHROMADB_API_KEY
+        sync: false
+      - key: CHROMADB_TENANT
+        sync: false
+      - key: CHROMADB_DATABASE
+        value: Scio
+      - key: DEBUG
+        value: "false"

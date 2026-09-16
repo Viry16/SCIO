@@ -112,8 +112,8 @@ class RAGService:
         # Retrieve relevant context
         context, sources = self.retrieve(query)
         
-        # Generate response - use Gemini if model contains 'gemini'
-        if model and 'gemini' in model:
+        # Generate response - use Gemini if model contains 'gemini' or Ollama is not available
+        if (model and 'gemini' in model) or not self.llm.is_connected():
             response = self.gemini.generate(
                 user_message=query,
                 context=context,
@@ -121,12 +121,21 @@ class RAGService:
                 model=model
             )
         else:
-            response = self.llm.generate(
-                user_message=query,
-                context=context,
-                conversation_history=conversation_history,
-                model=model
-            )
+            try:
+                response = self.llm.generate(
+                    user_message=query,
+                    context=context,
+                    conversation_history=conversation_history,
+                    model=model
+                )
+            except Exception as e:
+                print(f"Ollama call failed ({e}), falling back to Gemini...")
+                response = self.gemini.generate(
+                    user_message=query,
+                    context=context,
+                    conversation_history=conversation_history,
+                    model=model
+                )
         
         # Add critical warning if needed
         if is_critical:
