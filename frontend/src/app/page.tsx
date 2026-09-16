@@ -92,30 +92,122 @@ const StatCard = ({ icon, value, label }: StatCardProps) => (
   </div>
 );
 
-// Typing animation for hero
-const TypingAnimation = () => {
-  const [text, setText] = useState("");
-  const fullText = "How do I reset my Windows password?";
+// Demo conversations for interactive hero preview
+const DEMO_CONVERSATIONS = [
+  {
+    question: "How do I reset my Windows password?",
+    intro: "I can help you with that! Here are the steps:",
+    steps: [
+      "Click Start → Settings → Accounts",
+      'Select "Sign-in options"',
+      'Click "Password" then "Change"',
+    ],
+  },
+  {
+    question: "My WiFi keeps disconnecting on Windows 11",
+    intro: "Here are quick troubleshooting steps to restore your connection:",
+    steps: [
+      "Open Settings → Network & internet → Troubleshoot",
+      "Restart your router and wait 30 seconds",
+      "Update your network adapter driver in Device Manager",
+    ],
+  },
+];
+
+// Interactive demo chat for hero preview
+const HeroDemoChat = () => {
+  const [convIndex, setConvIndex] = useState(0);
+  const [typedText, setTypedText] = useState("");
+  const [status, setStatus] = useState<"typing" | "thinking" | "answered">("typing");
+
+  const currentConv = DEMO_CONVERSATIONS[convIndex];
 
   useEffect(() => {
-    let index = 0;
-    const timer = setInterval(() => {
-      setText(fullText.slice(0, index));
-      index++;
-      if (index > fullText.length) {
-        setTimeout(() => {
-          index = 0;
-        }, 2000);
+    let isCancelled = false;
+    let charIndex = 0;
+    setTypedText("");
+    setStatus("typing");
+
+    const timers: NodeJS.Timeout[] = [];
+
+    const typingInterval = setInterval(() => {
+      if (isCancelled) return;
+      charIndex++;
+      setTypedText(currentConv.question.slice(0, charIndex));
+
+      if (charIndex >= currentConv.question.length) {
+        clearInterval(typingInterval);
+
+        const thinkingTimer = setTimeout(() => {
+          if (isCancelled) return;
+          setStatus("thinking");
+
+          const answeredTimer = setTimeout(() => {
+            if (isCancelled) return;
+            setStatus("answered");
+
+            const nextTimer = setTimeout(() => {
+              if (isCancelled) return;
+              setConvIndex((prev) => (prev + 1) % DEMO_CONVERSATIONS.length);
+            }, 5000);
+            timers.push(nextTimer);
+          }, 1100);
+          timers.push(answeredTimer);
+        }, 500);
+        timers.push(thinkingTimer);
       }
-    }, 100);
-    return () => clearInterval(timer);
-  }, []);
+    }, 55);
+
+    timers.push(typingInterval);
+
+    return () => {
+      isCancelled = true;
+      timers.forEach(clearTimeout);
+      clearInterval(typingInterval);
+    };
+  }, [convIndex, currentConv.question]);
 
   return (
-    <span className="text-accent-300">
-      {text}
-      <span className="animate-pulse">|</span>
-    </span>
+    <div className="space-y-4 min-h-[170px]">
+      {/* User message */}
+      <div className="flex justify-end">
+        <div className="bg-accent-500/20 border border-accent-500/30 text-accent-100 px-4 py-2.5 rounded-2xl rounded-br-md max-w-sm text-sm shadow-sm">
+          <span>{typedText}</span>
+          {status === "typing" && (
+            <span className="inline-block w-1.5 h-4 ml-1 bg-accent-400 align-middle animate-pulse" />
+          )}
+        </div>
+      </div>
+
+      {/* Assistant Thinking / Typing indicator */}
+      {status === "thinking" && (
+        <div className="flex justify-start animate-fade-in">
+          <div className="bg-dark-800 text-dark-200 px-4 py-3 rounded-2xl rounded-bl-md border border-white/5">
+            <div className="typing-dots">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Assistant Answer - shown only after user finishes typing */}
+      {status === "answered" && (
+        <div className="flex justify-start animate-fade-in">
+          <div className="bg-dark-800 text-dark-200 px-4 py-3 rounded-2xl rounded-bl-md max-w-md text-sm border border-white/5 shadow-lg">
+            <p className="mb-2 text-dark-100 font-medium">
+              {currentConv.intro}
+            </p>
+            <ol className="list-decimal list-inside space-y-1 text-dark-300">
+              {currentConv.steps.map((step, idx) => (
+                <li key={idx}>{step}</li>
+              ))}
+            </ol>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 
@@ -209,25 +301,7 @@ export default function HomePage() {
               </div>
 
               {/* Mock chat messages */}
-              <div className="space-y-4">
-                <div className="flex justify-end">
-                  <div className="bg-accent-500/20 text-accent-100 px-4 py-2 rounded-2xl rounded-br-md max-w-xs">
-                    <TypingAnimation />
-                  </div>
-                </div>
-                <div className="flex justify-start">
-                  <div className="bg-dark-800 text-dark-200 px-4 py-3 rounded-2xl rounded-bl-md max-w-md text-sm">
-                    <p className="mb-2">
-                      I can help you with that! Here are the steps:
-                    </p>
-                    <ol className="list-decimal list-inside space-y-1 text-dark-300">
-                      <li>Click Start → Settings → Accounts</li>
-                      <li>Select "Sign-in options"</li>
-                      <li>Click "Password" then "Change"</li>
-                    </ol>
-                  </div>
-                </div>
-              </div>
+              <HeroDemoChat />
             </div>
           </div>
         </div>
